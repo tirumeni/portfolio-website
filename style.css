@@ -1896,3 +1896,101 @@ mask:
     animation: none !important;
   }
 }
+/* ----------------------------------------------------------------
+   16. CERTIFICATIONS SECTION
+---------------------------------------------------------------- */
+.cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-5);
+}
+
+.cert-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+  transition: transform var(--dur-fast) var(--ease-premium),
+              border-color var(--dur-fast) var(--ease-premium),
+              box-shadow var(--dur-fast) var(--ease-premium);
+}
+
+.cert-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(34, 226, 245, 0.5);
+  box-shadow: 0 20px 40px rgba(34, 226, 245, 0.16);
+}
+
+.cert-card__top {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.cert-card__badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(34, 226, 245, 0.12);
+  border: 1px solid rgba(34, 226, 245, 0.25);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.cert-card__title {
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.cert-card__issuer {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.cert-card__meta {
+  color: var(--text-tertiary);
+  font-size: 0.84rem;
+}
+
+.cert-card__points {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding-left: 1.1rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.cert-card__points li {
+  list-style: disc;
+}
+
+.cert-card__link {
+  margin-top: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1rem;
+  border-radius: 999px;
+  background: var(--gradient-accent);
+  color: var(--void);
+  font-weight: 600;
+  transition: transform var(--dur-fast) var(--ease-premium);
+}
+
+.cert-card__link:hover,
+.cert-card__link:focus-visible {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  .cert-grid {
+    grid-template-columns: 1fr;
+  }
+}
