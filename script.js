@@ -466,3 +466,80 @@
   }
 
 })();
+
+/* ================================================================
+   9. PROJECTS — screenshot gallery + preview modal
+   Thumbnails swap the hero image; clicking the hero opens a modal.
+   Missing screenshots degrade gracefully (thumb hidden / placeholder).
+================================================================ */
+(() => {
+  const shot = document.getElementById("projectShot");
+  const shotImg = document.getElementById("projectShotImg");
+  const thumbsWrap = document.getElementById("projectThumbs");
+  const modal = document.getElementById("projectModal");
+  const modalImg = document.getElementById("projectModalImg");
+  const modalClose = document.getElementById("projectModalClose");
+
+  if (!shot || !shotImg || !thumbsWrap || !modal) return;
+
+  const thumbs = Array.from(thumbsWrap.querySelectorAll(".project-thumb"));
+
+  shotImg.addEventListener("error", () => shot.classList.add("is-missing"));
+  shotImg.addEventListener("load", () => shot.classList.remove("is-missing"));
+  if (shotImg.complete && shotImg.naturalWidth === 0 && shotImg.getAttribute("src")) {
+    shot.classList.add("is-missing");
+  }
+
+  thumbs.forEach((thumb) => {
+    const img = thumb.querySelector("img");
+    const hide = () => thumb.classList.add("is-missing");
+    img.addEventListener("error", hide);
+    if (img.complete && img.naturalWidth === 0) hide();
+
+    thumb.addEventListener("click", () => {
+      if (thumb.classList.contains("is-active")) return;
+
+      thumbs.forEach((t) => {
+        t.classList.remove("is-active");
+        t.setAttribute("aria-selected", "false");
+      });
+      thumb.classList.add("is-active");
+      thumb.setAttribute("aria-selected", "true");
+
+      shot.classList.add("is-swapping");
+      window.setTimeout(() => {
+        shotImg.src = thumb.dataset.src;
+        shotImg.alt = thumb.dataset.alt || "";
+        shot.classList.remove("is-swapping");
+      }, 200);
+    });
+  });
+
+  let lastFocus = null;
+
+  const openModal = () => {
+    if (shot.classList.contains("is-missing")) return;
+    lastFocus = document.activeElement;
+    modalImg.src = shotImg.currentSrc || shotImg.src;
+    modalImg.alt = shotImg.alt;
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+    modalClose.focus();
+  };
+
+  const closeModal = () => {
+    modal.hidden = true;
+    modalImg.src = "";
+    document.body.style.overflow = "";
+    if (lastFocus) lastFocus.focus();
+  };
+
+  shot.addEventListener("click", openModal);
+  modalClose.addEventListener("click", closeModal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) closeModal();
+  });
+})();
