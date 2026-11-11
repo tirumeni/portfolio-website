@@ -182,6 +182,9 @@
                 src="assets/images/vikash.png"
                 alt="TIRUMENI VIKASH"
                 class="hero__image"
+                width="500"
+                height="500"
+                fetchpriority="high"
               />
             </div>
           </div>
@@ -379,8 +382,10 @@
           <h2 class="about__title">Featured Project</h2>
         </div>
 
-        <div class="project-wrap reveal" data-reveal="up">
-          <article class="project-card" id="projectCard" aria-labelledby="projectTitle">
+        <div class="project-wrap project-carousel reveal" data-reveal="up" id="projectCarousel" aria-roledescription="carousel" aria-label="Featured projects">
+          <button class="project-nav project-nav--prev" id="projectPrev" type="button" aria-label="Previous project">&#8592;</button>
+          <div class="project-carousel__stage" id="projectStage" tabindex="0">
+          <article class="project-card" id="projectCard" aria-labelledby="projectTitle" aria-live="polite">
             <div class="project-card__glow" aria-hidden="true"></div>
 
             <!-- Media: hero screenshot -->
@@ -401,19 +406,19 @@
             <div class="project-card__body">
               <p class="project-card__tag">
                 <span class="project-card__tag-dot" aria-hidden="true"></span>
-                Featured &middot; Flagship Project
+                <span id="projectTag">Featured &middot; Flagship Project</span>
               </p>
 
               <h3 class="project-card__title" id="projectTitle">
-                <span class="project-card__code">PS-227</span>
-                Satellite Change Intelligence Dashboard
+                <span class="project-card__code" id="projectCode">PS-227</span>
+                <span id="projectTitleText">Satellite Change Intelligence Dashboard</span>
               </h3>
 
-              <p class="project-card__desc">
+              <p class="project-card__desc" id="projectDescription">
                 An AI-powered satellite intelligence dashboard for semantic search, multi-temporal change detection, interactive GIS visualization, analytics, and report generation.
               </p>
 
-              <ul class="project-chips" aria-label="Key features">
+              <ul class="project-chips" id="projectFeatures" aria-label="Key features">
                 <li>Semantic Search</li>
                 <li>Satellite Map</li>
                 <li>Before/After Analysis</li>
@@ -423,7 +428,7 @@
                 <li>Reports</li>
               </ul>
 
-              <ul class="project-stack" aria-label="Tech stack">
+              <ul class="project-stack" id="projectStack" aria-label="Tech stack">
                 <li>React</li>
                 <li>TypeScript</li>
                 <li>Tailwind CSS</li>
@@ -433,7 +438,7 @@
                 <li>Vite</li>
               </ul>
 
-              <ul class="project-stats" aria-label="Project highlights">
+              <ul class="project-stats" id="projectStats" aria-label="Project highlights">
                 <li><strong>8+</strong><span>Core Modules</span></li>
                 <li><strong>20+</strong><span>Interactive Components</span></li>
                 <li><strong>100%</strong><span>Responsive</span></li>
@@ -441,11 +446,11 @@
               </ul>
 
               <div class="project-card__actions">
-                <a class="btn btn--primary" href="https://satellite-dashboard-ruby.vercel.app" target="_blank" rel="noopener noreferrer">
+                <a class="btn btn--primary" id="projectLive" target="_blank" rel="noopener noreferrer">
                   Live Demo
                   <svg class="btn__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
                 </a>
-                <a class="btn btn--secondary" href="https://github.com/tirumeni/satellite-dashboard" target="_blank" rel="noopener noreferrer">
+                <a class="btn btn--secondary" id="projectGithub" target="_blank" rel="noopener noreferrer">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
                   GitHub
                 </a>
@@ -484,6 +489,9 @@
               </button>
             </div>
           </article>
+          </div>
+          <button class="project-nav project-nav--next" id="projectNext" type="button" aria-label="Next project">&#8594;</button>
+          <div class="project-dots" id="projectDots" aria-label="Choose project"></div>
 
           <p class="project-soon">
             <span class="status-dot" aria-hidden="true"></span>

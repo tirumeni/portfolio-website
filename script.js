@@ -236,7 +236,7 @@
 
     const CONFIG = {
       density: 14000,     // lower = more particles (px^2 per particle)
-      maxParticles: 90,
+      maxParticles: isFinePointer ? 90 : 42,
       linkDistance: 130,
       speed: 0.25,
       colors: ["rgba(91,140,255,", "rgba(34,226,245,", "rgba(157,92,255,"],
@@ -468,78 +468,137 @@
 })();
 
 /* ================================================================
-   9. PROJECTS — screenshot gallery + preview modal
-   Thumbnails swap the hero image; clicking the hero opens a modal.
-   Missing screenshots degrade gracefully (thumb hidden / placeholder).
+   9. PROJECT CAROUSEL + SCREENSHOT PREVIEW
+   Project details live in one array; the existing card is reused.
 ================================================================ */
 (() => {
-  const shot = document.getElementById("projectShot");
-  const shotImg = document.getElementById("projectShotImg");
-  const thumbsWrap = document.getElementById("projectThumbs");
-  const modal = document.getElementById("projectModal");
-  const modalImg = document.getElementById("projectModalImg");
-  const modalClose = document.getElementById("projectModalClose");
+  // This carousel has its own IIFE, so it must read reduced-motion locally.
+  const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+  const projects = [
+    {
+      code: "PS-227", title: "Satellite Change Intelligence Dashboard", subtitle: "Featured · Flagship Project",
+      heroImage: "assets/images/projects/dashboard-main.png", heroAlt: "Satellite Change Intelligence Dashboard main interface",
+      description: "An AI-powered satellite intelligence dashboard for semantic search, multi-temporal change detection, interactive GIS visualization, analytics, and report generation.",
+      features: ["Semantic Search", "Satellite Map", "Before/After Analysis", "Timeline", "AI Summary", "Analytics", "Reports"],
+      technologies: ["React", "TypeScript", "Tailwind CSS", "Leaflet", "Mapbox", "Chart.js", "Vite"],
+      stats: [["8+", "Core Modules"], ["20+", "Interactive Components"], ["100%", "Responsive"], ["AI", "Powered"]],
+      github: "https://github.com/tirumeni/satellite-dashboard", liveDemo: "https://satellite-dashboard-ruby.vercel.app/",
+      gallery: [
+        { src: "assets/images/projects/dashboard-main.png", alt: "Dashboard Overview", thumb: "assets/images/projects/shot-overview.png" },
+        ...["map", "before-after", "timeline", "analytics", "ai-summary", "report"].map((name) => ({
+          src: `assets/images/projects/shot-${name}.png`, alt: name.replaceAll("-", " "), thumb: `assets/images/projects/shot-${name}.png`
+        }))
+      ]
+    },
+    {
+      code: "IoT · EDGE", title: "Edge Intelligence for Efficient IoT Telemetry", subtitle: "Featured · IoT Project",
+      heroImage: "assets/images/projects/iot-dashboard.png", heroAlt: "Real-time IoT telemetry dashboard showing edge processing, fleet health, and device activity",
+      description: "A real-time IoT telemetry platform that connects ESP32 sensor fleets, processes MQTT data at the edge, and brings live device health, analytics, alerts, and low-latency insights into one dashboard.",
+      features: ["Edge Computing", "IoT Telemetry", "MQTT", "Real-time Dashboard", "Analytics", "Low Latency", "ESP32", "Sensor Fusion"],
+      technologies: ["HTML", "CSS", "JavaScript", "ESP32", "MQTT", "Node-RED", "Firebase", "Chart.js", "Arduino", "IoT"],
+      stats: [["248", "Sensors"], ["36", "Edge Devices"], ["42 ms", "Response Time"], ["98.6%", "Accuracy"]],
+      github: "https://github.com/tirumeni/Edge-Intelligence-for-Efficient-IoT-Telemetry", liveDemo: "https://edge-intelligence-for-efficient-io.vercel.app/",
+      gallery: [
+        { src: "assets/images/projects/iot-dashboard.png", alt: "IoT Telemetry Dashboard", thumb: "assets/images/projects/iot-dashboard.png" },
+        { src: "assets/images/projects/iot-huffman.png", alt: "Huffman Telemetry Compression", thumb: "assets/images/projects/iot-huffman.png" },
+        { src: "assets/images/projects/iot-algorithm.png", alt: "Edge Algorithm Performance", thumb: "assets/images/projects/iot-algorithm.png" },
+        { src: "assets/images/projects/iot-network.png", alt: "IoT Network Topology", thumb: "assets/images/projects/iot-network.png" },
+        { src: "assets/images/projects/iot-hardware.png", alt: "ESP32 Sensor Hardware Monitoring", thumb: "assets/images/projects/iot-hardware.png" },
+        { src: "assets/images/projects/iot-codebook.png", alt: "MQTT Telemetry and Codebook Analytics", thumb: "assets/images/projects/iot-codebook.png" },
+        { src: "assets/images/projects/iot-docs.png", alt: "IoT Platform Documentation and Architecture", thumb: "assets/images/projects/iot-docs.png" }
+      ]
+    }
+  ];
 
-  if (!shot || !shotImg || !thumbsWrap || !modal) return;
-
-  const thumbs = Array.from(thumbsWrap.querySelectorAll(".project-thumb"));
-
-  shotImg.addEventListener("error", () => shot.classList.add("is-missing"));
-  shotImg.addEventListener("load", () => shot.classList.remove("is-missing"));
-  if (shotImg.complete && shotImg.naturalWidth === 0 && shotImg.getAttribute("src")) {
-    shot.classList.add("is-missing");
+  const $ = (id) => document.getElementById(id);
+  const elements = {
+    card: $("projectCard"), stage: $("projectStage"), dots: $("projectDots"),
+    shot: $("projectShot"), shotImg: $("projectShotImg"), thumbs: $("projectThumbs"),
+    modal: $("projectModal"), modalImg: $("projectModalImg"), modalClose: $("projectModalClose"),
+    previous: $("projectPrev"), next: $("projectNext"), projectsSection: $("projects"),
+    code: $("projectCode"), badge: $("projectTag"), title: $("projectTitleText"),
+    description: $("projectDescription"), features: $("projectFeatures"),
+    technologies: $("projectStack"), stats: $("projectStats"),
+    github: $("projectGithub"), liveDemo: $("projectLive")
+  };
+  const missingElements = Object.entries(elements).filter(([, element]) => !element).map(([name]) => name);
+  if (missingElements.length) {
+    console.error(`Project carousel not initialized; missing required elements: ${missingElements.join(", ")}`);
+    return;
   }
+  const { card, stage, dots, shot, shotImg, thumbs: thumbsWrap, modal, modalImg, modalClose } = elements;
+  if (stage.dataset.projectCarouselInitialized === "true") return;
+  stage.dataset.projectCarouselInitialized = "true";
+  let currentProjectIndex = 0, lastFocus = null, startX = 0, startY = 0, startTime = 0, dragging = false, suppressClick = false;
+  let transitionTimer = 0, animationTimer = 0;
 
-  thumbs.forEach((thumb) => {
-    const img = thumb.querySelector("img");
-    const hide = () => thumb.classList.add("is-missing");
-    img.addEventListener("error", hide);
-    if (img.complete && img.naturalWidth === 0) hide();
-
-    thumb.addEventListener("click", () => {
-      if (thumb.classList.contains("is-active")) return;
-
-      thumbs.forEach((t) => {
-        t.classList.remove("is-active");
-        t.setAttribute("aria-selected", "false");
-      });
-      thumb.classList.add("is-active");
-      thumb.setAttribute("aria-selected", "true");
-
-      shot.classList.add("is-swapping");
-      window.setTimeout(() => {
-        shotImg.src = thumb.dataset.src;
-        shotImg.alt = thumb.dataset.alt || "";
-        shot.classList.remove("is-swapping");
-      }, 200);
-    });
-  });
-
-  let lastFocus = null;
-
-  const openModal = () => {
-    if (shot.classList.contains("is-missing")) return;
-    lastFocus = document.activeElement;
-    modalImg.src = shotImg.currentSrc || shotImg.src;
-    modalImg.alt = shotImg.alt;
-    modal.hidden = false;
-    document.body.style.overflow = "hidden";
-    modalClose.focus();
+  const renderProject = () => {
+    const project = projects[currentProjectIndex];
+    if (!project || !project.code || !project.subtitle || !project.title || !project.description ||
+        !project.heroImage || !project.heroAlt || !project.gallery?.length ||
+        !project.gallery.every((item) => item?.src && item?.thumb && item?.alt) ||
+        !Array.isArray(project.features) || !Array.isArray(project.technologies) ||
+        !Array.isArray(project.stats) || !project.github || !project.liveDemo) {
+      console.error(`Project carousel cannot render project at index ${currentProjectIndex}; project data is incomplete.`);
+      return;
+    }
+    elements.code.textContent = project.code;
+    elements.title.textContent = project.title;
+    elements.badge.textContent = project.subtitle;
+    elements.description.textContent = project.description;
+    const fill = (list, items) => list.replaceChildren(...items.map((item) => { const li = document.createElement("li"); li.textContent = item; return li; }));
+    fill(elements.features, project.features);
+    fill(elements.technologies, project.technologies);
+    elements.stats.replaceChildren(...project.stats.map(([value, label]) => { const li = document.createElement("li"), strong = document.createElement("strong"), span = document.createElement("span"); strong.textContent = value; span.textContent = label; li.append(strong, span); return li; }));
+    elements.liveDemo.href = project.liveDemo;
+    elements.github.href = project.github;
+    thumbsWrap.replaceChildren(...project.gallery.map((item, i) => {
+      const button = document.createElement("button"); button.type = "button"; button.className = `project-thumb${i === 0 ? " is-active" : ""}`; button.setAttribute("role", "tab"); button.setAttribute("aria-selected", String(i === 0)); button.setAttribute("aria-label", item.alt); button.dataset.src = item.src; button.dataset.alt = item.alt;
+      const frame = document.createElement("span"); frame.className = "project-thumb__img"; const img = document.createElement("img"); img.src = item.thumb; img.alt = ""; img.loading = "lazy"; img.decoding = "async"; frame.append(img); const label = document.createElement("span"); label.className = "project-thumb__label"; label.textContent = item.alt; button.append(frame, label);
+      button.addEventListener("click", () => selectImage(button)); return button;
+    }));
+    dots.replaceChildren(...projects.map((item, i) => { const button = document.createElement("button"); button.type = "button"; button.className = `project-dot${i === currentProjectIndex ? " is-active" : ""}`; button.setAttribute("aria-label", `Show ${item.title}`); button.setAttribute("aria-current", String(i === currentProjectIndex)); button.addEventListener("click", () => navigateToProject(i, i > currentProjectIndex ? 1 : -1)); return button; }));
+    shotImg.src = project.heroImage; shotImg.alt = project.heroAlt; shot.classList.remove("is-missing");
   };
-
-  const closeModal = () => {
-    modal.hidden = true;
-    modalImg.src = "";
-    document.body.style.overflow = "";
-    if (lastFocus) lastFocus.focus();
+  const navigateToProject = (index, direction) => {
+    const count = projects.length;
+    if (!count) return;
+    const nextIndex = Number.isFinite(index) ? ((index % count) + count) % count : currentProjectIndex;
+    if (nextIndex === currentProjectIndex) return;
+    if (!projects[nextIndex]) return;
+    currentProjectIndex = nextIndex;
+    window.clearTimeout(transitionTimer);
+    window.clearTimeout(animationTimer);
+    card.classList.remove("is-exiting-left", "is-exiting-right", "is-entering");
+    card.classList.add(direction > 0 ? "is-exiting-left" : "is-exiting-right");
+    transitionTimer = window.setTimeout(() => {
+      renderProject();
+      card.classList.remove("is-exiting-left", "is-exiting-right");
+      card.classList.add("is-entering");
+      animationTimer = window.setTimeout(() => {
+        card.classList.remove("is-entering");
+      }, prefersReducedMotion ? 0 : 360);
+    }, prefersReducedMotion ? 0 : 220);
   };
-
-  shot.addEventListener("click", openModal);
-  modalClose.addEventListener("click", closeModal);
-  modal.addEventListener("click", (event) => {
-    if (event.target === modal) closeModal();
-  });
+  const selectImage = (button) => {
+    thumbsWrap.querySelectorAll(".project-thumb").forEach((t) => { t.classList.toggle("is-active", t === button); t.setAttribute("aria-selected", String(t === button)); });
+    shot.classList.add("is-swapping"); window.setTimeout(() => { shotImg.src = button.dataset.src; shotImg.alt = button.dataset.alt || ""; shot.classList.remove("is-swapping", "is-missing"); }, prefersReducedMotion ? 0 : 180);
+  };
+  elements.previous.addEventListener("click", () => navigateToProject(currentProjectIndex - 1, -1));
+  elements.next.addEventListener("click", () => navigateToProject(currentProjectIndex + 1, 1));
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modal.hidden) closeModal();
+    if (!modal.hidden) { if (event.key === "Escape") closeModal(); return; }
+    if (!elements.projectsSection.contains(document.activeElement)) return;
+    if (event.key === "ArrowLeft") { event.preventDefault(); navigateToProject(currentProjectIndex - 1, -1); }
+    if (event.key === "ArrowRight") { event.preventDefault(); navigateToProject(currentProjectIndex + 1, 1); }
   });
+  stage.addEventListener("pointerdown", (event) => { if (event.button !== 0 || event.target.closest("a, button, input, select, textarea")) return; startX = event.clientX; startY = event.clientY; startTime = performance.now(); dragging = true; stage.setPointerCapture(event.pointerId); });
+  stage.addEventListener("pointerup", (event) => { if (!dragging) return; dragging = false; const dx = event.clientX - startX, dy = event.clientY - startY, elapsed = performance.now() - startTime, swiped = Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2 || Math.abs(dx) > 20 && elapsed < 220 && Math.abs(dx) / elapsed > .35; if (swiped) { suppressClick = true; navigateToProject(currentProjectIndex + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1); window.setTimeout(() => { suppressClick = false; }, 0); } });
+  stage.addEventListener("pointercancel", () => { dragging = false; });
+  stage.addEventListener("wheel", (event) => { if (Math.abs(event.deltaX) > Math.abs(event.deltaY) * 1.2 && Math.abs(event.deltaX) > 25) navigateToProject(currentProjectIndex + (event.deltaX > 0 ? 1 : -1), event.deltaX > 0 ? 1 : -1); }, { passive: true });
+  shotImg.addEventListener("error", () => shot.classList.add("is-missing")); shotImg.addEventListener("load", () => shot.classList.remove("is-missing"));
+  const openModal = () => { if (shot.classList.contains("is-missing")) return; lastFocus = document.activeElement; modalImg.src = shotImg.currentSrc || shotImg.src; modalImg.alt = shotImg.alt; modal.hidden = false; document.body.style.overflow = "hidden"; modalClose.focus(); };
+  function closeModal() { modal.hidden = true; modalImg.src = ""; document.body.style.overflow = ""; if (lastFocus) lastFocus.focus(); }
+  shot.addEventListener("click", (event) => { if (suppressClick) { event.preventDefault(); return; } openModal(); }); modalClose.addEventListener("click", closeModal); modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+  renderProject();
 })();
