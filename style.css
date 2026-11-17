@@ -206,7 +206,6 @@ body.is-loaded .hero__name      { animation-delay: 0.15s; }
 body.is-loaded .hero__subtitle  { animation-delay: 0.25s; }
 body.is-loaded .terminal        { animation-delay: 0.35s; }
 body.is-loaded .hero__intro     { animation-delay: 0.45s; }
-body.is-loaded .hero__socials   { animation-delay: 0.6s; }
 body.is-loaded .hero__visual    { animation-delay: 0.4s; }
 
 .navbar {
@@ -755,52 +754,225 @@ body.is-loaded .bg__particles {
   transform: translateY(-1px);
 }
 
-.hero__socials {
+/* Five-link macOS-style dock with a sliding section capsule. */
+.dock__symbols {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.dock {
+  position: fixed;
+  z-index: 120;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
   display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.hero__socials-label {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  letter-spacing: 0.02em;
-}
-
-.social-row {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.social-icon {
-  display: inline-flex;
-  align-items: center;
+  width: 478px;
+  max-width: calc(100vw - 28px);
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
+  padding: 5px 28px;
+  overflow: visible;
+  transform: translate3d(-50%, 0, 0);
+  border: 1px solid rgba(0, 220, 255, 0.15);
+  border-radius: 36px;
+  background: rgba(18, 38, 70, 0.55);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 10px 35px rgba(0, 150, 255, 0.18),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: transform 460ms cubic-bezier(0.22, 1.18, 0.36, 1),
+              opacity 460ms ease,
+              visibility 0s;
+}
+
+.dock.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(-50%, calc(100% + 28px), 0);
+  transition-delay: 0s, 0s, 460ms;
+  visibility: hidden;
+}
+
+.dock__list {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 30px;
+  width: max-content;
+  padding: 3px 5px 10px;
+  margin: 0;
+  list-style: none;
+}
+
+.dock__item {
+  position: relative;
+  flex: 0 0 58px;
+  height: 46px;
+}
+
+.dock__link {
+  position: absolute;
+  z-index: 1;
+  bottom: 0;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  background: transparent;
   color: var(--text-secondary);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  transition: transform var(--dur-fast) var(--ease-premium),
-              color var(--dur-fast) var(--ease-premium),
-              border-color var(--dur-fast) var(--ease-premium),
-              box-shadow var(--dur-fast) var(--ease-premium);
+  transform: translate3d(-50%, var(--dock-lift, 0px), 0);
+  transform-origin: center bottom;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.social-icon:hover,
-.social-icon:focus-visible {
-  color: var(--text-primary);
-  transform: translateY(-4px) scale(1.06);
-  border-color: transparent;
-  background: var(--gradient-accent-soft);
-  box-shadow: 0 10px 24px rgba(47, 111, 255, 0.25);
+.dock__link::before {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 60px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.035);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 160ms ease;
 }
 
+.dock__link svg {
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  transform: scale(var(--dock-scale, 1));
+  transform-origin: center bottom;
+  will-change: transform;
+}
 
+.dock__link:hover,
+.dock__link:focus-visible {
+  z-index: 3;
+  color: #fff;
+}
+
+.dock__link:hover::before,
+.dock__link:focus-visible::before,
+.dock__link[aria-current="location"]::before {
+  border-color: rgba(34, 226, 245, 0.58);
+  background: linear-gradient(145deg, rgba(34, 226, 245, 0.2), rgba(47, 111, 255, 0.16));
+  box-shadow: 0 0 20px rgba(34, 226, 245, 0.2);
+  opacity: 1;
+}
+
+.dock__link:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.dock__link[aria-current="location"] {
+  color: #fff;
+}
+
+.dock__indicator {
+  position: absolute;
+  z-index: 2;
+  bottom: 2px;
+  left: 0;
+  display: block;
+  width: 28px;
+  height: 4px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--cyan);
+  box-shadow: 0 0 9px 2px rgba(34, 226, 245, 0.7);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(var(--indicator-x, 0px), 0, 0);
+  transition: transform 460ms cubic-bezier(0.22, 1.18, 0.36, 1), opacity 180ms ease;
+  list-style: none;
+}
+
+.dock__indicator.is-visible { opacity: 1; }
+.dock__link.is-magnified { z-index: 4; }
+
+.dock__tooltip {
+  position: absolute;
+  z-index: 5;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(12, 16, 29, 0.88);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  color: #fff;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 10px) scale(0.9);
+  transform-origin: center bottom;
+  transition: opacity 160ms ease, transform 160ms ease, visibility 0s linear 160ms;
+  visibility: hidden;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.dock__link:hover .dock__tooltip,
+.dock__link:focus-visible .dock__tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  transition-delay: 0s;
+  visibility: visible;
+}
+
+@media (max-width: 840px) {
+  .dock { width: 432px; padding: 5px 24px; }
+  .dock__list { gap: 28px; padding-bottom: 10px; }
+  .dock__item { flex-basis: 52px; }
+  .dock__link svg { width: 20px; height: 20px; }
+}
+
+@media (max-width: 640px) {
+  .dock {
+    bottom: max(10px, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 16px);
+    width: 382px;
+    padding: 5px 16px;
+    overflow: visible;
+  }
+
+  .dock__list { gap: 28px; padding: 3px 3px 10px; }
+  .dock__item { flex-basis: clamp(32px, calc((100vw - 168px) / 5), 46px); }
+  .dock__link svg { width: 20px; height: 20px; }
+  .dock__tooltip { display: none; }
+}
+
+@media (max-width: 380px) {
+  .dock { padding-inline: 12px; }
+  .dock__item { flex-basis: clamp(32px, calc((100vw - 160px) / 5), 46px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock,
+  .dock__indicator,
+  .dock__link,
+  .dock__tooltip { transition-duration: 0.01ms; }
+}
 /* ----------------------------------------------------------------
    10. HERO VISUAL
 ---------------------------------------------------------------- */
@@ -1100,7 +1272,6 @@ mask:
 
   .hero__eyebrow,
   .hero__actions,
-  .hero__socials,
   .terminal {
     margin-inline: auto;
   }
@@ -1185,12 +1356,6 @@ mask:
     justify-content: center;
   }
 
-  .hero__socials {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
-  }
-
   .floating-badge {
     font-size: 0.68rem;
     padding: var(--space-2) var(--space-3);
@@ -1246,7 +1411,7 @@ mask:
 }
 
 /* ================================================================
-   15. ABOUT SECTION — PREMIUM STYLING
+   15. ABOUT SECTION â€” PREMIUM STYLING
    Reuses global tokens (--blue/--cyan/--purple, --surface, --border,
    --ease-premium, etc.) and reuses existing keyframes (sheen, spin,
    pulse-dot, float-y) so this section feels native to the site
@@ -1317,7 +1482,7 @@ mask:
   -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 40%, black 30%, transparent 85%);
 }
 
-/* Small floating sparks scattered through the section — cheap,
+/* Small floating sparks scattered through the section â€” cheap,
    transform/opacity-only, no layout thrash */
 .about__spark {
   position: absolute;
@@ -1499,7 +1664,7 @@ mask:
   transform-style: preserve-3d;
 }
 
-/* Rotating gradient ring — reuses the global `spin` keyframe */
+/* Rotating gradient ring â€” reuses the global `spin` keyframe */
 .about__image-ring {
   position: absolute;
   inset: -12px;
@@ -1821,7 +1986,7 @@ mask:
 }
 
 /* Keep the float animation on stat/skill/fact cards from fighting the
-   one-time reveal transform — float animation only starts once revealed */
+   one-time reveal transform â€” float animation only starts once revealed */
 .reveal.is-visible.tilt-card {
   transform: perspective(700px) rotateX(var(--rx)) rotateY(var(--ry));
 }
@@ -1851,7 +2016,7 @@ mask:
 }
 
 /* ----------------------------------------------------------------
-   ABOUT SECTION — RESPONSIVE
+   ABOUT SECTION â€” RESPONSIVE
 ---------------------------------------------------------------- */
 @media (max-width: 1024px) {
   .about__intro-row {
@@ -2020,7 +2185,7 @@ mask:
   }
 }
 /* ----------------------------------------------------------------
-   17. PROJECTS SECTION — FEATURED PROJECT CARD
+   17. PROJECTS SECTION â€” FEATURED PROJECT CARD
 ---------------------------------------------------------------- */
 .project-wrap {
   display: flex;
@@ -2664,10 +2829,6 @@ mask:
   .hero__actions { flex-direction: row; align-items: stretch; width: 100%; gap: .6rem; margin-bottom: 1rem; }
   .hero__actions .btn { flex: 1 1 0; min-width: 0; padding: .7rem .55rem; font-size: .78rem; white-space: nowrap; }
   .hero__actions .btn svg { width: 15px; height: 15px; }
-  .hero__socials { flex-direction: row; align-items: center; justify-content: center; gap: .75rem; }
-  .hero__socials-label { font-size: .68rem; }
-  .social-row { gap: .5rem; }
-  .social-icon { width: 38px; height: 38px; }
 
   .about__container { padding: 2.5rem 1rem; gap: 2rem; }
   .about__title { font-size: clamp(1.8rem, 8vw, 2.35rem); }
@@ -2703,8 +2864,6 @@ mask:
   .hero__name { font-size: clamp(1.65rem, 7.8vw, 1.9rem); }
   .hero__actions { gap: .4rem; }
   .hero__actions .btn { font-size: .72rem; padding-inline: .4rem; }
-  .hero__socials { gap: .5rem; }
-  .social-icon { width: 35px; height: 35px; }
   .about__container { padding-inline: .85rem; }
   .project-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

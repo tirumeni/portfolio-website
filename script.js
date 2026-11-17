@@ -350,14 +350,14 @@
 
   /* --------------------------------------------------------------
      8. ABOUT SECTION
-     8a. Scroll reveals   — elements with .reveal + [data-reveal]
+     8a. Scroll reveals   â€” elements with .reveal + [data-reveal]
                              animate in once, the first time they
                              cross into the viewport.
-     8b. Count-up stats   — .stat-card__number[data-count] counts
+     8b. Count-up stats   â€” .stat-card__number[data-count] counts
                              up from 0 once its card is revealed.
-     8c. Image tilt       — #aboutImageTilt tilts toward the cursor
+     8c. Image tilt       â€” #aboutImageTilt tilts toward the cursor
                              while the pointer is over the image.
-     8d. Card tilt        — .tilt-card elements (stats/skills/facts)
+     8d. Card tilt        â€” .tilt-card elements (stats/skills/facts)
                              get a subtle rotate-toward-cursor effect.
      All skipped gracefully if reduced motion is requested or the
      elements aren't present (e.g. on a page without an About section).
@@ -368,7 +368,7 @@
 
   if (revealEls.length) {
     if (prefersReducedMotion) {
-      // No animation loop needed — just show everything immediately
+      // No animation loop needed â€” just show everything immediately
       revealEls.forEach((el) => el.classList.add("is-visible"));
     } else {
       const revealObserver = new IntersectionObserver(
@@ -459,7 +459,7 @@
   const tiltCards = document.querySelectorAll(".tilt-card");
 
   if (tiltCards.length && isFinePointer && !prefersReducedMotion) {
-    const CARD_TILT_MAX = 6; // degrees — subtler than the main image
+    const CARD_TILT_MAX = 6; // degrees â€” subtler than the main image
 
     tiltCards.forEach((card) => {
       card.addEventListener("mousemove", (event) => {
@@ -481,6 +481,167 @@
 })();
 
 /* ================================================================
+   FLOATING DOCK NAVIGATION
+   A damped spring drives the hover wave; the capsule tracks the current
+   section while scroll direction controls the dock visibility.
+================================================================ */
+(() => {
+  "use strict";
+
+  const dock = document.getElementById("dockNav");
+  if (!dock) return;
+
+  const list = dock.querySelector(".dock__list");
+  const indicator = dock.querySelector(".dock__indicator");
+  const links = Array.from(dock.querySelectorAll(".dock__link"));
+  const sectionLinks = links.filter((link) => link.dataset.section);
+  const sections = sectionLinks
+    .map((link) => document.getElementById(link.dataset.section))
+    .filter(Boolean)
+    .sort((first, second) => first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Keep the capsule under the last dock-linked section reached.
+  const updateActiveSection = () => {
+    const marker = Math.min(window.innerHeight * 0.44, window.innerHeight - 100);
+    let activeId = null;
+
+    sections.forEach((section) => {
+      if (section.getBoundingClientRect().top <= marker) activeId = section.id;
+    });
+
+    let activeLink = null;
+    sectionLinks.forEach((link) => {
+      const isActive = link.dataset.section === activeId;
+      if (isActive) {
+        activeLink = link;
+        link.setAttribute("aria-current", "location");
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    });
+
+    if (!indicator || !list || !activeLink) {
+      indicator?.classList.remove("is-visible");
+      return;
+    }
+
+    const linkRect = activeLink.getBoundingClientRect();
+    const listRect = list.getBoundingClientRect();
+    const x = linkRect.left - listRect.left + list.scrollLeft + linkRect.width / 2 - indicator.offsetWidth / 2;
+    indicator.style.setProperty("--indicator-x", `${x}px`);
+    indicator.classList.add("is-visible");
+  };
+
+  let scrollFrame = 0;
+  let previousScrollY = window.scrollY;
+  let scrollIntent = 0;
+  const onScroll = () => {
+    if (scrollFrame) return;
+    scrollFrame = window.requestAnimationFrame(() => {
+      scrollFrame = 0;
+      const currentY = window.scrollY;
+      const delta = currentY - previousScrollY;
+      scrollIntent += delta;
+
+      if (currentY <= 24) {
+        dock.classList.remove("is-hidden");
+        scrollIntent = 0;
+      } else if (scrollIntent < -4) {
+        dock.classList.remove("is-hidden");
+        scrollIntent = 0;
+      } else if (scrollIntent > 4) {
+        dock.classList.add("is-hidden");
+        scrollIntent = 0;
+      }
+
+      previousScrollY = currentY;
+      updateActiveSection();
+    });
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", updateActiveSection, { passive: true });
+  updateActiveSection();
+
+  if (reducedMotion) return;
+
+  // Cursor proximity sets spring targets; animation frames only write transforms.
+  const states = links.map(() => ({ scale: 1, velocity: 0 }));
+  let pointerX = null;
+  let tapResetTimer = 0;
+  let magnifyFrame = 0;
+  let previousFrameTime = 0;
+
+  const proximityScale = (distance) => {
+    if (distance <= 18) return 1.7;
+    if (distance <= 62) return 1.7 - ((distance - 18) / 44) * 0.3;
+    if (distance <= 118) return 1.4 - ((distance - 62) / 56) * 0.2;
+    if (distance <= 158) return 1.2 - ((distance - 118) / 40) * 0.2;
+    return 1;
+  };
+
+  const animateDock = (time) => {
+    magnifyFrame = 0;
+    const deltaTime = previousFrameTime
+      ? Math.min((time - previousFrameTime) / 1000, 0.032)
+      : 1 / 60;
+    previousFrameTime = time;
+    let stillMoving = false;
+
+    links.forEach((link, index) => {
+      const rect = link.getBoundingClientRect();
+      const target = pointerX === null
+        ? 1
+        : proximityScale(Math.abs(pointerX - (rect.left + rect.width / 2)));
+      const state = states[index];
+      const difference = target - state.scale;
+      state.velocity += (150 * difference - 20 * state.velocity) * deltaTime;
+      state.scale += state.velocity * deltaTime;
+
+      if (Math.abs(difference) > 0.002 || Math.abs(state.velocity) > 0.015) {
+        stillMoving = true;
+      } else {
+        state.scale = target;
+        state.velocity = 0;
+      }
+
+      link.style.setProperty("--dock-scale", state.scale.toFixed(3));
+      link.style.setProperty("--dock-lift", `${(-16 * (state.scale - 1) / 0.7).toFixed(2)}px`);
+      link.classList.toggle("is-magnified", state.scale > 1.04);
+    });
+
+    if (stillMoving) magnifyFrame = window.requestAnimationFrame(animateDock);
+  };
+
+  const scheduleMagnification = () => {
+    if (!magnifyFrame) magnifyFrame = window.requestAnimationFrame(animateDock);
+  };
+
+  dock.addEventListener("pointermove", (event) => {
+    if (event.pointerType !== "mouse") return;
+    pointerX = event.clientX;
+    scheduleMagnification();
+  }, { passive: true });
+
+  dock.addEventListener("pointerdown", (event) => {
+    if (event.pointerType !== "touch") return;
+    pointerX = event.clientX;
+    window.clearTimeout(tapResetTimer);
+    scheduleMagnification();
+    tapResetTimer = window.setTimeout(() => {
+      pointerX = null;
+      scheduleMagnification();
+    }, 280);
+  });
+
+  dock.addEventListener("pointerleave", (event) => {
+    if (event.pointerType !== "mouse") return;
+    pointerX = null;
+    scheduleMagnification();
+  });
+})();
+/* ================================================================
    9. PROJECT CAROUSEL + SCREENSHOT PREVIEW
    Project details live in one array; the existing card is reused.
 ================================================================ */
@@ -489,7 +650,7 @@
   const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
   const projects = [
     {
-      code: "PS-227", title: "Satellite Change Intelligence Dashboard", subtitle: "Featured · Flagship Project",
+      code: "PS-227", title: "Satellite Change Intelligence Dashboard", subtitle: "Featured Â· Flagship Project",
       heroImage: "assets/images/projects/dashboard-main.png", heroAlt: "Satellite Change Intelligence Dashboard main interface",
       description: "An AI-powered satellite intelligence dashboard for semantic search, multi-temporal change detection, interactive GIS visualization, analytics, and report generation.",
       features: ["Semantic Search", "Satellite Map", "Before/After Analysis", "Timeline", "AI Summary", "Analytics", "Reports"],
@@ -504,7 +665,7 @@
       ]
     },
     {
-      code: "IoT · EDGE", title: "Edge Intelligence for Efficient IoT Telemetry", subtitle: "Featured · IoT Project",
+      code: "IoT Â· EDGE", title: "Edge Intelligence for Efficient IoT Telemetry", subtitle: "Featured Â· IoT Project",
       heroImage: "assets/images/projects/iot-dashboard.png", heroAlt: "Real-time IoT telemetry dashboard showing edge processing, fleet health, and device activity",
       description: "A real-time IoT telemetry platform that connects ESP32 sensor fleets, processes MQTT data at the edge, and brings live device health, analytics, alerts, and low-latency insights into one dashboard.",
       features: ["Edge Computing", "IoT Telemetry", "MQTT", "Real-time Dashboard", "Analytics", "Low Latency", "ESP32", "Sensor Fusion"],
