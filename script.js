@@ -17,6 +17,19 @@
 (() => {
   "use strict";
 
+  // Shared profile asset paths for every portrait use on the site.
+  const PROFILE_ASSETS = Object.freeze({
+    main: "assets/images/vikash.png",
+    background: "assets/images/profile-bg.png",
+  });
+  document.querySelectorAll("[data-profile-image='main']").forEach((image) => {
+    image.src = PROFILE_ASSETS.main;
+  });
+  document.documentElement.style.setProperty(
+    "--profile-background-image",
+    `url("${PROFILE_ASSETS.background}")`
+  );
+
   /* --------------------------------------------------------------
      1. SHARED HELPERS
   -------------------------------------------------------------- */

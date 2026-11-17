@@ -1,0 +1,53 @@
+I want to improve the background portrait used in my portfolio hero section so it blends smoothly with the animated background and does not look like a black-and-white sticker or a separate pasted image.
+
+Use the existing portrait image as the source.
+
+## Goal
+Make the portrait feel like it belongs inside the same animated hero background, with a soft blended look.
+
+## What I do NOT want
+- No black-and-white monochrome look
+- No hard sticker edge
+- No visible outline
+- No harsh cutout border
+- No white halo
+- No odd floating portrait effect
+- No image that looks pasted on top
+- No strong contrast that makes it stand out too much
+
+## What I DO want
+- The portrait should blend into the hero animation
+- The image should feel merged with the dark blue / cyan / purple website theme
+- The portrait should have a soft cinematic tint that matches the page colors
+- The face should still be recognizable
+- The hair, glasses, beard, and shirt should still be visible
+- The portrait should feel like part of the background art, not a sticker
+- The transparency should be smooth and natural
+
+## Style requirements
+- Use a subtle blue / cyan / violet color grade so it matches the animated background
+- Keep the subject semi-transparent, around 25% to 40% visible
+- Add a very soft fade at the edges so the image dissolves into the background
+- Remove any sharp border completely
+- Keep the subject slightly blurred if needed, but not too blurry
+- Preserve enough detail so the image still looks premium
+- Make it look like a smooth hero backdrop element
+
+## Important visual direction
+The image should merge with the animated particles/grid/glow already on the page.
+It should not look like a separate photo.
+It should feel like it is emerging from the background.
+
+## Output
+- Keep transparency
+- Keep the same filename: `assets/images/profile-bg.png`
+- Replace the old version
+- Do not change HTML, CSS, or JavaScript unless absolutely necessary
+
+## Final check
+After processing, the portrait should:
+- blend into the page,
+- match the animated color palette,
+- avoid the black-and-white look,
+- avoid odd outline edges,
+- and feel premium inside the hero section.
